@@ -11,7 +11,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/pgsql"
+    path: "/mnt/k8s-data/pgsql"
 
 ---
 apiVersion: v1
@@ -26,7 +26,7 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/elk"
+    path: "/mnt/k8s-data/elk"
 
 ---
 apiVersion: v1
@@ -41,7 +41,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/gitlab"
+    path: "/mnt/k8s-data/gitlab"
 
 ---
 apiVersion: v1
@@ -56,7 +56,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/repo"
+    path: "/mnt/k8s-data/repo"
 
 ---
 apiVersion: v1
@@ -71,7 +71,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/monitor"
+    path: "/mnt/k8s-data/monitor"
 
 ---
 apiVersion: v1
@@ -86,7 +86,22 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/cloud"
+    path: "/mnt/k8s-data/cloud"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hostpath-pv-rancher
+spec:
+  storageClassName: local-nfs-mount
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/k8s-data/rancher"
 
 ---
 apiVersion: v1
@@ -101,4 +116,4 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   hostPath:
-    path: "/mnt/juliano"
+    path: "/mnt/k8s-data/juliano"

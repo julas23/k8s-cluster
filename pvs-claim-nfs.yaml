@@ -80,6 +80,19 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: rancher-pvc
+spec:
+  storageClassName: local-nfs-mount
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
   name: juliano-media-pvc
 spec:
   storageClassName: local-nfs-mount
