@@ -1,11 +1,20 @@
+### LOADBALANCER IP
+---
 apiVersion: v1
-kind: Secret
+kind: Service
 metadata:
-  name: postgres-secret
-type: Opaque
-data:
-  postgres-password: amFzMjMwNVgK
+  name: postgres
+  namespace: default
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.209
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
 
+### PERSISTENT VOLUME STORAGE
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -21,6 +30,7 @@ spec:
   hostPath:
     path: "/mnt/k8s-data/pgsql"
 
+### PERSISTENT VOLUME CLAIM
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -32,8 +42,19 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
+      storage: 100Gi
 
+### SECRET
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+data:
+  postgres-password: amFzMjMwNVgK
+
+### DEPLOYMENT
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -76,15 +97,18 @@ spec:
         persistentVolumeClaim:
           claimName: pgsql-pvc
 
+### SERVICE IP
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-service
+  name: postgres
 spec:
-  type: ClusterIP
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.209
   ports:
     - port: 5432
       targetPort: 5432
+      protocol: TCP
   selector:
     app: postgres

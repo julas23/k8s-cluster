@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elk
+  namespace: default
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.205
+  selector:
+    app: elk
+  ports:
+    - port: 9200
+      targetPort: 9200
+    - port: 5601
+      targetPort: 5601
+    - port: 5044
+      targetPort: 5044
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hostpath-pv-elk
+spec:
+  storageClassName: local-nfs-mount
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/k8s-data/elk"
+
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elk-pvc
+spec:
+  storageClassName: local-nfs-mount
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+
+
+

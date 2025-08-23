@@ -1,0 +1,66 @@
+---
+- name: Instalar o primeiro nó do K3s (servidor inicial)
+  hosts: k8s_servers[0]
+  become: true
+  tasks:
+    - name: Instalar K3s com o script de conveniência e todos os IPs no certificado
+      # A variável INSTALL_K3S_EXEC permite passar múltiplos argumentos ao script
+      ansible.builtin.shell:
+        cmd: >
+          curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --cluster-init
+          {% for host in groups['k8s_servers'] %}
+            --tls-san {{ hostvars[host]['ansible_host'] }}
+          {% endfor %}"
+          sh -s -
+        creates: /etc/systemd/system/k3s.service
+
+    - name: Aguardar 30 segundos para o nó inicializar
+      ansible.builtin.pause:
+        seconds: 30
+
+    - name: Obter o token do cluster do primeiro nó
+      ansible.builtin.command: "cat /var/lib/rancher/k3s/server/node-token"
+      register: k3s_token_output
+      changed_when: false
+    
+    - name: Armazenar o token para os outros nós usarem
+      ansible.builtin.set_fact:
+        k3s_cluster_token: "{{ k3s_token_output.stdout }}"
+        cacheable: yes
+
+- name: Juntar os servidores K3s restantes ao cluster
+  hosts: k8s_servers[1:]
+  become: true
+  serial: 1
+  tasks:
+    - name: Instalar K3s e juntar ao cluster
+      ansible.builtin.shell: >
+        curl -sfL https://get.k3s.io |
+        K3S_TOKEN="{{ hostvars[groups['k8s_servers'][0]]['k3s_cluster_token'] }}"
+        sh -s - server --server https://{{ hostvars[groups['k8s_servers'][0]]['ansible_host'] }}:6443
+      args:
+        creates: /etc/systemd/system/k3s.service
+
+- name: Obter o Kubeconfig e verificar o cluster
+  hosts: k8s_servers[0]
+  become: true
+  tasks:
+    - name: Ler o ficheiro kubeconfig do nó
+      ansible.builtin.command: "cat /etc/rancher/k3s/k3s.yaml"
+      register: k3s_kubeconfig_output
+      changed_when: false
+
+    - name: Salvar o kubeconfig na sua máquina local (com o IP correto)
+      ansible.builtin.copy:
+        content: "{{ k3s_kubeconfig_output.stdout | replace('127.0.0.1', hostvars[groups['k8s_servers'][0]]['ansible_host']) }}"
+        dest: "./k3s_kubeconfig.yaml"
+      delegate_to: localhost
+      changed_when: false
+
+    - name: Mostrar mensagem final
+      ansible.builtin.debug:
+        msg:
+          - "Cluster K3s criado com sucesso!"
+          - "O ficheiro de configuração foi salvo em 'k3s_kubeconfig.yaml' no seu diretório atual."
+          - "Use-o com: export KUBECONFIG=$(pwd)/k3s_kubeconfig.yaml"
+          - "Depois, execute 'kubectl get nodes' para ver o seu cluster."

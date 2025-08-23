@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+  namespace: default
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.207
+  selector:
+    app: jenkins
+  ports:
+    - port: 8080
+      targetPort: 8080
+    - port: 50000
+      targetPort: 50000
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hostpath-pv-monitor
+spec:
+  storageClassName: local-nfs-mount
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/k8s-data/monitor"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: monitor-pvc
+spec:
+  storageClassName: local-nfs-mount
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
