@@ -40,3 +40,12 @@ spec:
   resources:
     requests:
       storage: 30Gi
+
+---
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsUser: 9993
+        runAsGroup: 2000
+        fsGroup: 2000

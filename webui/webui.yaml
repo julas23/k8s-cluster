@@ -1,0 +1,83 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webui
+  namespace: default
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.211
+  selector:
+    app: open-webui
+  ports:
+    - port: 3000
+      targetPort: 8080
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hostpath-pv-webui
+spec:
+  storageClassName: local-nfs-mount
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/k8s-data/webui"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webui-pvc
+spec:
+  storageClassName: local-nfs-mount
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 30Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  labels:
+    app: open-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    spec:
+      securityContext:
+        runAsUser: 9990
+        runAsGroup: 2000
+        fsGroup: 2000
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      securityContext:
+        runAsUser: 9993
+        runAsGroup: 2000
+        fsGroup: 2000
+      containers:
+        - name: open-webui
+          image: ghcr.io/open-webui/open-webui:main
+          ports:
+            - containerPort: 8080
+          env:
+            - name: OLLAMA_API_BASE
+              value: "http://10.0.0.11:11434"
+            - name: WEBUI_SECRET_KEY
+              value: "34c7c98a4d4a970275b15da90eadc178c68d840d582b5ef357ea84284c0e9131"
+          volumeMounts:
+            - name: webui-storage
+              mountPath: /app/backend/data
+      volumes:
+        - name: webui-storage
+          persistentVolumeClaim:
+            claimName: webui-pvc
