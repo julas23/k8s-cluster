@@ -1,0 +1,14 @@
+version: '3'
+services:
+  iqootion-bot:
+    image: python:latest
+    container_name: iqoption-bot
+    ports:
+      - "5000:5000"  # ← Adicione esta linha
+    volumes:
+      - ./src:/app/src
+      - ./iqo.json:/app/iqo.json
+      - ./requirements.lock:/app/requirements.lock
+    working_dir: /app
+    command: |
+      sh -c "pip install -r requirements.lock && python3 src/main.py"

@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: iqobot
+  namespace: default
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.212
+  selector:
+    app: iqoption-bot
+  ports:
+    - port: 5000
+      targetPort: 5000
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: hostpath-pv-iqobot
+spec:
+  storageClassName: local-nfs-mount
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/mnt/k8s-data/iqobot"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: iqobot-pvc
+spec:
+  storageClassName: local-nfs-mount
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: iqoption-bot-service
+spec:
+  selector:
+    app: iqoption-bot
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iqoption-bot-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iqoption-bot
+  template:
+    metadata:
+      labels:
+        app: iqoption-bot
+    spec:
+      securityContext:
+        runAsUser: 9989
+        runAsGroup: 2000
+        fsGroup: 2000
+      containers:
+        - name: iqoption-bot
+          image: python:latest
+          workingDir: /app
+          env:
+            - name: PYTHONPATH
+              value: "/app/pip_packages"
+          command:
+            - "/bin/sh"
+            - "-c"
+            - "pip install --target=/app/pip_packages -r requirements.lock && python src/main.py"
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: src-volume
+              mountPath: /app
+      volumes:
+        - name: src-volume
+          persistentVolumeClaim:
+            claimName: iqobot-pvc
+

@@ -1,0 +1,7 @@
+{
+    "MODO_CONTA" : "PRACTICE",
+    "IQ_EMAIL" : "julianoas@gmail.com",
+    "IQ_SENHA" : "i+J@$.2305*",
+    "ENDPOINT_LOGIN" : "https://auth.iqoption.com/api/v1.0/login",
+    "WS_URL" : "wss://ws.iqoption.com/echo/websocket"
+}
